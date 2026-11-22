@@ -1,4 +1,9 @@
 // tiny stack VM — make.fun tiny-stack-vm-01, ISA v1
+// Contract: data stack 256 x i32 (all arithmetic wraps), memory 256 words,
+// call stack 64, step limit 1e6, output cap 65536 bytes. Exit codes: 0 =
+// halt/EXIT, 2 stack underflow, 3 stack overflow, 4 div by zero, 5 bad
+// opcode, 6 bad address, 7 call overflow, 8 RET with empty call stack,
+// 9 pc or immediate out of bounds, 10 step limit, 11 output limit.
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
 
 function run(P: Uint8Array, I: Uint8Array): [Uint8Array, number] {
@@ -8,6 +13,7 @@ function run(P: Uint8Array, I: Uint8Array): [Uint8Array, number] {
   const T = (e: number) => { throw { e }; };
   try {
     for (;;) {
+      // fetch, in trap order: step limit, pc in bounds, immediate in bounds
       if (steps >= 1e6) T(10);
       if (pc < 0 || pc >= P.length) T(9);
       const op = P[pc];
